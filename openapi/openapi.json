@@ -1,0 +1,5559 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Trisk.io Documentation",
+    "description": "",
+    "termsOfService": "",
+    "contact": {
+      "email": "demo_info@trisk.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://sandbox.trisk.us:8080/v1"
+    }
+  ],
+  "paths": {
+    "/login": {
+      "post": {
+        "summary": "Authenticate using credentials",
+        "tags": [
+          "Authentication"
+        ],
+        "servers": [
+          {
+            "url": "https://authentication.sandbox.trisk.us:8080/v1",
+            "description": "Authentication server"
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "attributes": {
+                        "type": "object",
+                        "properties": {
+                          "email": {
+                            "type": "string",
+                            "description": "An email of the registered user",
+                            "example": "user@email.com"
+                          },
+                          "password": {
+                            "type": "string",
+                            "description": "An password of the registered user"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully authorized",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "The authorisation code that should be changed to the JWT token",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "example": "auth_codes_internal"
+                        },
+                        "id": {
+                          "type": "string",
+                          "description": "The id of the auth code internal",
+                          "example": "7e48b1a4-ccfc-4c6b-b03f-d9bb9ac4f883"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/WrongCredentialsError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "summary": "Logout",
+        "description": "Logout from the system",
+        "tags": [
+          "Authentication"
+        ],
+        "servers": [
+          {
+            "url": "https://authentication.sandbox.trisk.us:8080/v1",
+            "description": "Authentication server"
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "422": {
+            "$ref": "#/components/responses/WrongCredentialsError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/login/code/{code}": {
+      "post": {
+        "summary": "Get JWT token from authentication",
+        "description": "The request to get a JWT token. Most of the requests should include an Authentication Bearer token in the header",
+        "tags": [
+          "JWT"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "in": "path",
+            "name": "code",
+            "description": "The code can be received from the body of a Authentication request to the authentication server",
+            "example": "056dba62-0168-4d67-8131-a685f2d365ed",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Request body should contains data",
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "description": "Request body should contain a current tenant id",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "The current tenant id",
+                        "example": "056dba62-0168-4d67-8131-a685f2d365ed"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The user successfully authorized to the Trisk",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "example": "session"
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string",
+                          "description": "Authentication Bearer token that should be used as a header in most requests"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/token/refresh": {
+      "post": {
+        "summary": "Refresh JWT token",
+        "description": "The JWT token has TTL and to work with it longer JWT should be refreshed",
+        "tags": [
+          "JWT"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/users/me": {
+      "get": {
+        "summary": "Get info about current user",
+        "description": "The info about the current user, can be used to show a user profile",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "description": "The attributes that will be returned together with the user info",
+            "allowEmptyValue": false,
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "profile,clients"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful get a user info",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/task_instances": {
+      "get": {
+        "summary": "Get list of task instances",
+        "tags": [
+          "Task instances"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Include"
+          },
+          {
+            "$ref": "#/components/parameters/Search"
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "description": "The task instance list can be filtered",
+            "allowEmptyValue": false,
+            "required": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "description": "The filter by the task instance statuses: 0 - th task instance is not started; 10 - the task instance was started and in the active status; 20 - the task instance was completed; 30 - the task instance was canceled",
+                  "example": 10,
+                  "enum": [
+                    0,
+                    10,
+                    20,
+                    30
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/Pagination"
+                },
+                "elastic": {
+                  "type": "object",
+                  "properties": {
+                    "assignee": {
+                      "type": "string",
+                      "description": "The filter by the task instance assignee id",
+                      "example": "b64a8d22-5f64-4462-9fdc-f538f03ec5fe"
+                    },
+                    "task_type": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "description": "The filter by the task instance type",
+                        "example": "Fill Form",
+                        "enum": [
+                          "Fill Form",
+                          "Task Approve",
+                          "Smart Contract"
+                        ]
+                      }
+                    },
+                    "completed_at": {
+                      "type": "object",
+                      "description": "The filter for a task instance by the completion date range",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "description": "Start of the range",
+                          "example": "2022-05-31T21:00:00.000Z"
+                        },
+                        "to": {
+                          "type": "string",
+                          "description": "End of the range",
+                          "example": "2022-06-08T20:59:59.999Z"
+                        }
+                      }
+                    },
+                    "workflow_identifier": {
+                      "type": "string",
+                      "description": "The filter by the workflow identifier",
+                      "example": "Simple Identifier"
+                    },
+                    "workflow_status": {
+                      "type": "integer",
+                      "description": "The filter by the workflow instance statuses: 0 - th workflow instance is not started; 10 - the workflow was started and in the active status; 20 - the workflow instance was completed; 30 - the workflow instance was canceled; 40 - the workflow instance was terminated",
+                      "example": 10,
+                      "enum": [
+                        10,
+                        20,
+                        30,
+                        40
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "style": "deepObject",
+            "explode": true
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "description": "The task instance list can be sorted",
+            "allowEmptyValue": false,
+            "required": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "task_instances_readonly": {
+                  "type": "object",
+                  "properties": {
+                    "0": {
+                      "type": "string",
+                      "description": "The task instance list ca be sorted by the name, description, due date",
+                      "enum": [
+                        "name",
+                        "-name",
+                        "description",
+                        "-description",
+                        "due_date",
+                        "-due_date"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "style": "deepObject",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TaskInstance.Readonly"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}": {
+      "get": {
+        "summary": "Get task instances",
+        "tags": [
+          "Task instances"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Include"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaskInstance.Full"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Update task instance",
+        "tags": [
+          "Task instances"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/FormInstance.SectionInstance.WithData"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}/artifact": {
+      "post": {
+        "summary": "Upload file task instance fill form",
+        "tags": [
+          "Task instances"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/X-Http-Method-Override-Put"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file_*": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "example": "section_instances"
+                      },
+                      "id": {
+                        "type": "string",
+                        "description": "The id of the section instance",
+                        "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+                      },
+                      "relationships": {
+                        "type": "object",
+                        "properties": {
+                          "field_instances": {
+                            "type": "object",
+                            "properties": {
+                              "data": {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "example": "field_instances"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "description": "The id of the field instance",
+                                    "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}/complete": {
+      "post": {
+        "summary": "Complete task instance",
+        "description": "Each task can be completed",
+        "tags": [
+          "Task instances"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "attributes": {
+                        "type": "object",
+                        "properties": {
+                          "properties": {
+                            "$ref": "#/components/schemas/TaskInstance.Properties"
+                          },
+                          "artifact": {
+                            "$ref": "#/components/schemas/TaskInstance.Artifact"
+                          }
+                        }
+                      },
+                      "relationships": {
+                        "type": "object",
+                        "properties": {
+                          "artifact": {
+                            "type": "object",
+                            "properties": {
+                              "data": {
+                                "$ref": "#/components/schemas/TaskInstance.ArtifactRelation.Full"
+                              }
+                            }
+                          },
+                          "forward_notifications": {
+                            "type": "object",
+                            "properties": {
+                              "data": {
+                                "$ref": "#/components/schemas/TaskInstance.ForwardNotification"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}/reject": {
+      "post": {
+        "summary": "Reject task instance",
+        "description": "Only the Form Approval task instance can be rejected",
+        "tags": [
+          "Task instances"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "relationships": {
+                        "type": "object",
+                        "properties": {
+                          "forward_notifications": {
+                            "type": "object",
+                            "properties": {
+                              "data": {
+                                "$ref": "#/components/schemas/TaskInstance.ForwardNotification"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}/artifact/discussions": {
+      "get": {
+        "summary": "List discussions",
+        "description": "The list of the discussions that left in the Fill Form and Form Approval",
+        "tags": [
+          "Task instances discussions"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "description": "The attributes that will be returned together with Task instances discussions",
+            "allowEmptyValue": false,
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "discussion_instances.author.profile"
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "description": "Discussions can be filtered by the field instance",
+            "allowEmptyValue": false,
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "section_instance_id": {
+                  "type": "string",
+                  "description": "Section instance id is required to filter by the field instance",
+                  "example": "923ad03c-b239-45a2-a286-b50a20f7b564"
+                },
+                "field_instance_id": {
+                  "type": "string",
+                  "description": "The id of the field instance",
+                  "example": "0ec0d663-bf6b-43c2-bd76-c225e1fdafef"
+                }
+              }
+            },
+            "style": "deepObject",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.WithDiscussion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create discussion",
+        "description": "The discussion can be left only in the Fill Form and Form Approval",
+        "tags": [
+          "Task instances discussions"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormInstance.SectionInstance.WithDiscussion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.Full"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}/artifact/discussions/resolve": {
+      "post": {
+        "summary": "Resolve/edit discussion",
+        "description": "The discussion can be resolve/edit",
+        "tags": [
+          "Task instances discussions"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormInstance.SectionInstance.WithDiscussion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.Full"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}/artifact/discussions/remove": {
+      "post": {
+        "summary": "Remove discussion",
+        "description": "The discussion can be removed",
+        "tags": [
+          "Task instances discussions"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormInstance.SectionInstance.WithDiscussion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.Full"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/blockchain/wallets/sessions": {
+      "post": {
+        "summary": "Create wallet session",
+        "description": "To connect wallet to the Smart Contract task instance need to create a wallet session",
+        "tags": [
+          "Blockchain"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          }
+        ],
+        "requestBody": {
+          "description": "The body of the create wallet request",
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "attributes": {
+                        "type": "object",
+                        "properties": {
+                          "identifier": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Blockchain.Session"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/blockchain/wallets/sessions/{identifier}": {
+      "post": {
+        "summary": "Remove wallet session",
+        "description": "The request to remove wallet from the Smart Contract task instance",
+        "tags": [
+          "Blockchain"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/X-Http-Method-Override-Delete"
+          },
+          {
+            "in": "path",
+            "name": "identifier",
+            "description": "The wallet session identifier id",
+            "example": "056dba62-0168-4d67-8131-a685f2d365ed",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}/execute": {
+      "post": {
+        "summary": "Execute smart contract",
+        "description": "The request to execute the Smart Contract task instance",
+        "tags": [
+          "Blockchain"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "attributes": {
+                        "type": "object",
+                        "properties": {
+                          "identifier": {
+                            "type": "string",
+                            "description": "Session identifier"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/flow_instances/{flowInstanceId}/relationships/container_instances/{containerInstanceId}/relationships/process_instances/{processInstanceId}/relationships/task_instances/{taskInstanceId}/reset": {
+      "post": {
+        "summary": "Reset smart contract instance",
+        "description": "If the Smart Contract instance executed with an error it can be reset",
+        "tags": [
+          "Blockchain"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Flow-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Container-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Process-Instance-Id"
+          },
+          {
+            "$ref": "#/components/parameters/Task-Instance-Id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Acknowledge"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/data_dictionary/variables": {
+      "get": {
+        "summary": "Get list of variables",
+        "description": "The list of the all variables",
+        "tags": [
+          "Data dictionary"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Search"
+          },
+          {
+            "$ref": "#/components/parameters/Data-Dictionary-Variable-Include"
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "description": "The list of the variables can be filtered",
+            "allowEmptyValue": false,
+            "required": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "pagination": {
+                  "$ref": "#/components/schemas/Pagination"
+                },
+                "elastic": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "$ref": "#/components/schemas/DataDictionary.Variable.Type"
+                    },
+                    "category": {
+                      "$ref": "#/components/schemas/DataDictionary.Variable.Category"
+                    }
+                  }
+                }
+              }
+            },
+            "style": "deepObject",
+            "explode": true
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "description": "The list of the variables can be sorted",
+            "allowEmptyValue": false,
+            "required": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data_dictionary_variables": {
+                  "type": "object",
+                  "properties": {
+                    "0": {
+                      "type": "string",
+                      "description": "The list of the variables can be sorted by the name, type, category, and creation date",
+                      "enum": [
+                        "name",
+                        "-name",
+                        "type",
+                        "-type",
+                        "category",
+                        "-category",
+                        "created_at",
+                        "-created_at"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "style": "deepObject",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DataDictionary.Variable"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/data_dictionary/variables/{id}": {
+      "get": {
+        "summary": "Get info about variable",
+        "description": "The full information about the variable",
+        "tags": [
+          "Data dictionary"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The id of the variable",
+            "example": "056dba62-0168-4d67-8131-a685f2d365ed",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Data-Dictionary-Variable-Include"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DataDictionary.Variable"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/data_dictionary/variables_cages": {
+      "get": {
+        "summary": "Get list of variables cages",
+        "description": "The list of the variable cages",
+        "tags": [
+          "Data dictionary"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "$ref": "#/components/parameters/Search"
+          },
+          {
+            "$ref": "#/components/parameters/Data-Dictionary-Variable-Cage-Include"
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "description": "The variable cages can be filtered",
+            "allowEmptyValue": false,
+            "required": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "pagination": {
+                  "$ref": "#/components/schemas/Pagination"
+                },
+                "elastic": {
+                  "type": "object",
+                  "properties": {
+                    "variable_name": {
+                      "type": "string",
+                      "description": "The name of the variable",
+                      "example": "Simple variable name"
+                    },
+                    "variable_type": {
+                      "$ref": "#/components/schemas/DataDictionary.Variable.Type"
+                    },
+                    "variable_category": {
+                      "$ref": "#/components/schemas/DataDictionary.Variable.Category"
+                    }
+                  }
+                }
+              }
+            },
+            "style": "deepObject",
+            "explode": true
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "description": "The variable cages can be sorted",
+            "allowEmptyValue": false,
+            "required": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data_dictionary_variables_cages": {
+                  "type": "object",
+                  "properties": {
+                    "variable": {
+                      "type": "object",
+                      "properties": {
+                        "0": {
+                          "type": "object",
+                          "properties": {
+                            "0": {
+                              "type": "string",
+                              "description": "The variable cages can be sorted by the name, type, category, date of the creation",
+                              "enum": [
+                                "name",
+                                "-name",
+                                "type",
+                                "-type",
+                                "category",
+                                "-category"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "style": "deepObject",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DataDictionary.Variable.Cage"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    },
+    "/data_dictionary/variables_cages/{id}": {
+      "get": {
+        "summary": "Get info about variable cage",
+        "description": "The full information about the variable cage",
+        "tags": [
+          "Data dictionary"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Domain"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ApiSecret"
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The id of the variable cage",
+            "example": "056dba62-0168-4d67-8131-a685f2d365ed",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Data-Dictionary-Variable-Cage-Include"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request was successful",
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DataDictionary.Variable.Cage"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "ApiKey": [],
+            "ApiSecret": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Whenever the user wants to access a protected route or resource, the user agent should send the JWT in the Authorization header using the Bearer schema ",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "ApiKey": {
+        "type": "apiKey",
+        "description": "An X-API-KEY key is a token that a client provides with a X-API-SECRET when making API calls, used instead of the JWT",
+        "in": "header",
+        "name": "X-API-KEY"
+      },
+      "ApiSecret": {
+        "type": "apiKey",
+        "description": "An X-API-SECRET key is a token that a client provides with a X-API-KEY when making API calls, used instead of the JWT",
+        "in": "header",
+        "name": "X-API-SECRET"
+      }
+    },
+    "parameters": {
+      "X-Domain": {
+        "in": "header",
+        "name": "X-Domain",
+        "description": "Every request should has X-Domain Header, in the UUIDv4 format. The X-Domain can be get from the Tenant Integrations page",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string",
+          "example": "3c1427df-2d0a-46b9-b256-47c145cd9bb9"
+        }
+      },
+      "ApiKey": {
+        "in": "header",
+        "name": "X-API-KEY",
+        "description": "An X-API-KEY key is a token that a client provides with a X-API-SECRET when making API calls, used instead of the JWT",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string",
+          "example": "3c1427df-2d0a-46b9-b256-47c145cd9bb9"
+        }
+      },
+      "ApiSecret": {
+        "in": "header",
+        "name": "X-API-SECRET",
+        "description": "An X-API-SECRET key is a token that a client provides with a X-API-KEY when making API calls, used instead of the JWT",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string",
+          "example": "3c1427df-2d0a-46b9-b256-47c145cd9bb9"
+        }
+      },
+      "X-Http-Method-Override-Delete": {
+        "in": "header",
+        "name": "X-HTTP-METHOD-OVERRIDE",
+        "description": "To make a DELETE request should make a POST request with X-HTTP-METHOD-OVERRIDE header",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "example": "DELETE"
+      },
+      "X-Http-Method-Override-Put": {
+        "in": "header",
+        "name": "X-HTTP-METHOD-OVERRIDE",
+        "description": "To make a PUT request should make a POST request with X-HTTP-METHOD-OVERRIDE header",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "example": "PUT"
+      },
+      "Flow-Instance-Id": {
+        "in": "path",
+        "name": "flowInstanceId",
+        "description": "The workflow instance id",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "example": "aa18a31a-0bcf-48d1-9350-a6ae49900111"
+      },
+      "Container-Instance-Id": {
+        "in": "path",
+        "name": "containerInstanceId",
+        "description": "The container instance id",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+      },
+      "Process-Instance-Id": {
+        "in": "path",
+        "name": "processInstanceId",
+        "description": "The process instance id",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "example": "defde76c-3f1d-4b24-8929-87ed70ea23d6"
+      },
+      "Task-Instance-Id": {
+        "in": "path",
+        "name": "taskInstanceId",
+        "description": "The task instance id",
+        "allowEmptyValue": false,
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "example": "3415f91d-a54c-455b-8ee3-51227dbe4f40"
+      },
+      "Task-Instance-Include": {
+        "in": "query",
+        "name": "include",
+        "description": "The attributes that will be returned together with the task instance",
+        "allowEmptyValue": false,
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "example": "artifact,assignee.profile,process_instances.container_instances.flow_instances.owner.profile"
+      },
+      "Data-Dictionary-Variable-Include": {
+        "in": "query",
+        "name": "include",
+        "description": "The attributes that will be returned together with the data dictionary variable",
+        "allowEmptyValue": false,
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "example": "author"
+      },
+      "Data-Dictionary-Variable-Cage-Include": {
+        "in": "query",
+        "name": "include",
+        "description": "The attributes that will be returned together with the data dictionary variable cage",
+        "allowEmptyValue": false,
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "example": "author,client,values"
+      },
+      "Search": {
+        "in": "query",
+        "name": "term",
+        "description": "The term to the search",
+        "allowEmptyValue": false,
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "Acknowledge": {
+        "description": "The \"true\" value of the acknowledge means that the request is correct and the \"false\" is incorrect",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "acknowledge": {
+                  "type": "boolean",
+                  "description": "The value of the acknowledge"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Error": {
+        "description": "That means something has gone wrong on the server, and the server returns more specific about what the exact problem is",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "object"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "The type of the error",
+                  "example": "errors"
+                },
+                "links": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "status": {
+                  "type": "integer",
+                  "description": "The status of the error"
+                },
+                "code": {
+                  "type": "integer"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "The title of the error"
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "object",
+                  "description": "The request body"
+                },
+                "meta": {
+                  "type": "object",
+                  "description": "The internal trace"
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnauthorizedError": {
+        "description": "Unauthorized exception",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/responses/Error"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "description": "The response status code of the error",
+                      "example": 401
+                    },
+                    "code": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "The title of the error",
+                      "example": "Unauthorized"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "WrongCredentialsError": {
+        "description": "The credentials is not equal to the saved values for user",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/responses/Error"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "description": "The response status code of the error",
+                      "example": 422
+                    },
+                    "code": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "The title of the error",
+                      "example": "Wrong Credential"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "The response body of the Not Found Error",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/responses/Error"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "description": "The response status code of the error",
+                      "example": 404
+                    },
+                    "code": {
+                      "type": "integer",
+                      "example": 404
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "The title of the error",
+                      "example": "Not Found"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the user",
+            "example": "users"
+          },
+          "id": {
+            "type": "string",
+            "description": "The user id in a system",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string",
+                "description": "The user email registered in a system",
+                "example": "example@domain.com"
+              },
+              "factory_password": {
+                "description": "The flag that shows that a user was not logged in to the system and doesn't change default password that receive in the registration email",
+                "type": "boolean"
+              },
+              "active": {
+                "type": "boolean"
+              },
+              "last_login_date": {
+                "type": "string",
+                "description": "The date and time when the user the last time logged in the system",
+                "example": "2016-01-01 12:00:00"
+              },
+              "reachable": {
+                "type": "boolean"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time of the user creation",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the user was changed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "archived_at": {
+                "type": "string",
+                "description": "The date and time when the user was archived",
+                "example": "2016-01-01 12:00:00"
+              },
+              "auth_provider": {
+                "type": "string",
+                "example": "trisk_credentials"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "profile": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/User.Profile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "User.Profile": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "users_profile"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the profile registered user",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "first_name": {
+                "type": "string",
+                "description": "The user first name",
+                "example": "John"
+              },
+              "last_name": {
+                "type": "string",
+                "description": "The user last name",
+                "example": "Doe"
+              },
+              "avatar": {
+                "type": "string",
+                "description": "The user avatar in the JPG, PNG, and max size of 5Mb"
+              },
+              "phone_code": {
+                "type": "string",
+                "description": "The international phone code",
+                "example": "1"
+              },
+              "phone_number": {
+                "type": "string",
+                "description": "The phone number of the user",
+                "example": "(111) 111-11-11"
+              },
+              "position": {
+                "type": "string",
+                "description": "This field is a string and can be used as a position of the user in the company or some other information"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time of the user creation",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the info in the user profile was changed",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          }
+        }
+      },
+      "Author": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Author it is a user who create entity",
+            "example": "authors"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the user who create entity",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The type of the author of the discussion instance",
+                "example": "users"
+              },
+              "scope": {
+                "type": "string",
+                "description": "The scope of the author of the discussion instance"
+              },
+              "email": {
+                "type": "string",
+                "description": "The email of the author of the discussion instance",
+                "example": "example@example.com"
+              },
+              "archived_at": {
+                "type": "string",
+                "description": "The date and time when the author of the discussion instance was archived",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "profile": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/User.Profile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Assignee": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "An assignee is a user who responsible for a task execution",
+            "example": "assignees"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the user who is a assignee",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "In the system we have a two types of the users, internal - users registered in the system and external_users - Trisk allows you to assign tasks to external users who are not registered in the platform",
+                "example": "users",
+                "enum": [
+                  "users",
+                  "external_users"
+                ]
+              },
+              "scope": {
+                "type": "string",
+                "description": "In the system we have a two scope of the users, tenant users - This is your Company users; the originator of processes/workflows and the client users - this is the individual on the other side, the provider of information, the respondent",
+                "example": "tenant",
+                "enum": [
+                  "tenant",
+                  "client"
+                ]
+              },
+              "email": {
+                "type": "string",
+                "description": "The user email"
+              },
+              "archived_at": {
+                "type": "string",
+                "description": "The date and time when the user was archived",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "profile": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/User.Profile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Client": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the client",
+            "example": "clients"
+          },
+          "id": {
+            "type": "string",
+            "description": "The client id in the UUIDv4 format",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The client name",
+                "example": "Simple client"
+              },
+              "is_simulation": {
+                "description": "The mode when the tenant can be as a client",
+                "type": "boolean"
+              },
+              "has_members": {
+                "description": "Indicate if the client has a members",
+                "type": "boolean"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the client was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the client was last time changed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "archive_at": {
+                "type": "string",
+                "description": "The date and time when the client was archived",
+                "example": "2016-01-01 12:00:00"
+              },
+              "remove_at": {
+                "type": "string",
+                "description": "The date and time when the client will be fully removed from a system",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          }
+        }
+      },
+      "Client.Profile": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "clients_profile"
+          },
+          "id": {
+            "type": "string",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "avatar": {
+                "type": "string"
+              },
+              "business_type": {
+                "type": "string",
+                "example": "C Corporation"
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.Base": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the task instance",
+            "example": "task_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The task instances id in the UUIDv4 format",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string",
+                "description": "The task reference in the UUIDv4 format",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "name": {
+                "type": "string",
+                "description": "Task instance name",
+                "example": "Simple Task Name"
+              },
+              "description": {
+                "type": "string",
+                "description": "Task instance description",
+                "example": "Simple Task Description"
+              },
+              "assignee_id": {
+                "type": "string",
+                "description": "Id of the user who selected as assignee",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "assignee_type": {
+                "type": "string",
+                "description": "The type of the user who selected as assignee",
+                "example": "users",
+                "enum": [
+                  "users",
+                  "external_users"
+                ]
+              },
+              "active": {
+                "type": "boolean",
+                "description": "The flag that show is it task instance in the active status"
+              },
+              "reopenable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reopen this task instance"
+
+              },
+              "rejectable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reject this task instance"
+
+              },
+              "reassignable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reassign this task instance"
+
+              },
+              "executable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to execute this task instance"
+              },
+              "completed": {
+                "type": "boolean",
+                "description": "The flag that show is it task instance completed or not"
+              },
+              "properties": {
+                "$ref": "#/components/schemas/TaskInstance.Properties"
+              },
+              "artifact": {
+                "$ref": "#/components/schemas/TaskInstance.Artifact"
+              },
+              "scope": {
+                "type": "string",
+                "description": "The indication in the which scope will task instance due date reached",
+                "example": "past_due",
+                "enum": [
+                  "past_due",
+                  "this_week",
+                  "on_schedule"
+                ]
+              },
+              "has_pending_reopen_request": {
+                "type": "boolean",
+                "description": "The flag that show is this task instance has not completed reopen requests"
+              },
+              "due_date": {
+                "type": "string",
+                "description": "The date and time when the task instance due date will be reached",
+                "example": "2018-08-13T14:07:32+00:00"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was completed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was changed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "completed_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was completed",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.Readonly": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the task instance",
+            "example": "task_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The task instances id in the UUIDv4 format",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string",
+                "description": "The task reference in the UUIDv4 format",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "name": {
+                "type": "string",
+                "description": "Task instance name",
+                "example": "Simple Task Name"
+              },
+              "description": {
+                "type": "string",
+                "description": "Task instance description",
+                "example": "Simple Task Description"
+              },
+              "assignee_id": {
+                "type": "string",
+                "description": "Id of the user who selected as assignee",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "assignee_type": {
+                "type": "string",
+                "description": "The type of the user who selected as assignee",
+                "example": "users",
+                "enum": [
+                  "users",
+                  "external_users"
+                ]
+              },
+              "assignee_types_allowed": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The type of users allowed to be as assignee, users or/and external_users",
+                  "example": "users"
+                }
+              },
+              "active": {
+                "type": "boolean",
+                "description": "The flag that show is it task instance in the active status"
+              },
+              "reopenable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reopen this task instance"
+
+              },
+              "rejectable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reject this task instance"
+
+              },
+              "reassignable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reassign this task instance"
+
+              },
+              "executable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to execute this task instance"
+              },
+              "completed": {
+                "type": "boolean",
+                "description": "The flag that show is it task instance completed or not"
+              },
+              "properties": {
+                "$ref": "#/components/schemas/TaskInstance.Properties"
+              },
+              "artifact": {
+                "$ref": "#/components/schemas/TaskInstance.Artifact"
+              },
+              "scope": {
+                "type": "string",
+                "description": "The indication in the which scope will task instance due date reached",
+                "example": "past_due",
+                "enum": [
+                  "past_due",
+                  "this_week",
+                  "on_schedule"
+                ]
+              },
+              "has_pending_reopen_request": {
+                "type": "boolean",
+                "description": "The flag that show is this task instance has not completed reopen requests"
+              },
+              "due_date": {
+                "type": "string",
+                "description": "The date and time when the task instance due date will be reached",
+                "example": "2018-08-13T14:07:32+00:00"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was completed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was changed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "completed_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was completed",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "artifact": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/TaskInstance.ArtifactRelation"
+                  }
+                }
+              },
+              "assignee": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/Assignee"
+                  }
+                }
+              },
+              "process_instances": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/TaskInstance.ProcessInstance"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.Full": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the task instance",
+            "example": "task_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The task instances id in the UUIDv4 format",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string",
+                "description": "The task reference in the UUIDv4 format",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "name": {
+                "type": "string",
+                "description": "Task instance name",
+                "example": "Simple Task Name"
+              },
+              "description": {
+                "type": "string",
+                "description": "Task instance description",
+                "example": "Simple Task Description"
+              },
+              "assignee_id": {
+                "type": "string",
+                "description": "Id of the user who selected as assignee",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "assignee_type": {
+                "type": "string",
+                "description": "The type of the user who selected as assignee",
+                "example": "users",
+                "enum": [
+                  "users",
+                  "external_users"
+                ]
+              },
+              "active": {
+                "type": "boolean",
+                "description": "The flag that show is it task instance in the active status"
+              },
+              "reopenable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reopen this task instance"
+
+              },
+              "rejectable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reject this task instance"
+
+              },
+              "reassignable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to reassign this task instance"
+
+              },
+              "executable": {
+                "type": "boolean",
+                "description": "The flag that show is current user has permission to execute this task instance"
+              },
+              "completed": {
+                "type": "boolean",
+                "description": "The flag that show is it task instance completed or not"
+              },
+              "canceled": {
+                "type": "boolean",
+                "description": "The flag that show is current task instance canceled or not"
+              },
+              "read_only": {
+                "type": "boolean",
+                "description": "The flag that show is current task instance read only or can be changed"
+              },
+              "timesheets_reportable": {
+                "type": "boolean",
+                "description": "The flag that show is timesheet can be leave for current task instance "
+              },
+              "properties": {
+                "$ref": "#/components/schemas/TaskInstance.Properties"
+              },
+              "artifact": {
+                "$ref": "#/components/schemas/TaskInstance.Artifact"
+              },
+              "scope": {
+                "type": "string",
+                "description": "The indication in the which scope will task instance due date reached",
+                "example": "past_due",
+                "enum": [
+                  "past_due",
+                  "this_week",
+                  "on_schedule"
+                ]
+              },
+              "has_pending_reopen_request": {
+                "type": "boolean",
+                "description": "The flag that show is this task instance has not completed reopen requests"
+              },
+              "due_date": {
+                "type": "string",
+                "description": "The date and time when the task instance due date will be reached",
+                "example": "2018-08-13T14:07:32+00:00"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was completed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was changed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "completed_at": {
+                "type": "string",
+                "description": "The date and time when the task instance was completed",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "artifact": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/TaskInstance.ArtifactRelation.Full"
+                  }
+                }
+              },
+              "assignee": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/Assignee"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.ForwardNotification": {
+        "type": "object",
+        "properties": {
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string",
+                "description": "The reference of the task instance",
+                "example": "80ff61b8-4f08-4f8f-a7ea-63c6b41d42e5"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "assignee": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "The id of the user who is a assignee of the task instance",
+                        "example": "defde76c-3f1d-4b24-8929-87ed70ea23d6"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.Properties": {
+        "type": "object",
+        "properties": {
+          "buttons": {
+            "type": "object",
+            "properties": {
+              "forward": {
+                "$ref": "#/components/schemas/TaskInstance.Properties.Button"
+              },
+              "backward": {
+                "$ref": "#/components/schemas/TaskInstance.Properties.Button"
+              }
+            }
+          },
+          "webhook": {
+            "type": "object",
+            "description": "In current moment relates only to the Export task instance type",
+            "properties": {
+              "events": {
+                "type": "array",
+                "description": "Type of the events that will trigger a webhook. In current moment available only task instance completed event available",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "endpoint": {
+                "type": "string",
+                "description": "Your unique URL where is a webhook listener"
+              }
+            }
+          },
+          "transitions": {
+            "type": "object",
+            "properties": {
+              "finish": {
+                "type": "boolean",
+                "description": "The flag that show is this task instance the last task in the workflow"
+              },
+              "forward": {
+                "type": "string",
+                "description": "Shows id of which task instance will be run after current completed. If the task instance is last in the workflow it will be empty",
+                "example": "d89bfd4b-61df-479a-84c1-614e4440865a"
+              },
+              "initial": {
+                "type": "boolean",
+                "description": "The flag that show is this task instance the first task in the workflow"
+              },
+              "backward": {
+                "type": "string",
+                "description": "Shows id of which task instance will be run if this task instance will be rejected. Relates only to the Form Approval task instance. If the task instance is first in the workflow it will be empty",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              }
+            }
+          },
+          "access_roles": {
+            "type": "object",
+            "properties": {
+              "read": {
+                "type": "array",
+                "description": "Shows id of the roles which users can view current task instance",
+                "items": {
+                  "type": "string",
+                  "example": "80ff61b8-4f08-4f8f-a7ea-63c6b41d42e5"
+                }
+              },
+              "write": {
+                "type": "array",
+                "description": "Shows id of the roles which users can change current task instance",
+                "items": {
+                  "type": "string",
+                  "example": "80ff61b8-4f08-4f8f-a7ea-63c6b41d42e5"
+                }
+              },
+              "assign": {
+                "type": "string",
+                "description": "The id of the user who is a assignee of the current task instance",
+                "example": "80ff61b8-4f08-4f8f-a7ea-63c6b41d42e5"
+              },
+              "execute": {
+                "type": "array",
+                "description": "Shows id of the roles which users can complete/execute current task instance",
+                "items": {
+                  "type": "string",
+                  "example": "80ff61b8-4f08-4f8f-a7ea-63c6b41d42e5"
+                }
+              }
+            }
+          },
+          "capabilities": {
+            "type": "object",
+            "properties": {
+              "wizard": {
+                "type": "object",
+                "description": "Deprecated capability",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "history": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "The flag shows that a history capability enabled for current task instance. Relates only to the Fill Form task type"
+                  }
+                }
+              },
+              "notices": {
+                "type": "array",
+                "description": "Notice after the due dates reached",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "interval": {
+                      "type": "string",
+                      "description": "Days after the due date",
+                      "example": "PT30M"
+                    }
+                  }
+                }
+              },
+              "comments": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "object",
+                    "properties": {
+                      "artifact": {
+                        "type": "object",
+                        "properties": {
+                          "visibility": {
+                            "type": "string",
+                            "description": "In the Trisk available two types of the comments, private and public.",
+                            "enum": [
+                              "private",
+                              "public"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "coworking": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "The flag shows that a coworking capability enabled for current task instance. Relates only to the Fill Form and Form Approval task instance types"
+                  }
+                }
+              },
+              "reminders": {
+                "type": "array",
+                "description": "Reminder before the due dates reached",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "interval": {
+                      "type": "string",
+                      "description": "Days in advance to the due date",
+                      "example": "PT30M"
+                    }
+                  }
+                }
+              },
+              "data_transfers": {
+                "type": "array",
+                "description": "Deprecated capability",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "due_date_settings": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "string",
+                    "description": "Days to the due date",
+                    "example": "1"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Types of the due dates: absolute - due date calculated based on the start date of the workflow; relative - due date calculated based on the previous step; actual - due date specified manually as date/month; immediately - relates only to the Notification step. Will be sent when the previous task will be completed or when workflow started, if it is the first task in the flow",
+                    "enum": [
+                      "absolute",
+                      "relative",
+                      "actual",
+                      "immediately"
+                    ]
+                  },
+                  "month": {
+                    "type": "string",
+                    "description": "The month when the due date reached if selected actual type of the due date"
+                  }
+                }
+              },
+              "due_dates_managing": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "The flag that show is due dates can be changed from the task instance, relates only to Document Delivery task type"
+                  }
+                }
+              }
+            }
+          },
+          "access_tokens": {
+            "type": "object",
+            "description": "The external users who used in the multiple workflow launch",
+            "properties": {
+              "data_source": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "additional_data": {
+            "type": "object",
+            "description": "The data used for a tutorials",
+            "properties": {}
+          },
+          "notifications_templates": {
+            "type": "object",
+            "properties": {
+              "assign_task": {
+                "type": "string",
+                "description": "The id of the notification template that will be send when the task instance will be assigned to the user",
+                "example": "defde76c-3f1d-4b24-8929-87ed70ea23d6"
+              },
+              "assign_task_batch": {
+                "type": "string",
+                "description": "The id of the notification template that will be send when the multiple task instances will be assigned to the user",
+                "example": "3415f91d-a54c-455b-8ee3-51227dbe4f40"
+              }
+            }
+          },
+          "access_tokens_instructions": {
+            "type": "array",
+            "description": "The instructions how to launch related workflows",
+            "items": {
+              "type": "object",
+              "properties": {
+                "task_reference": {
+                  "type": "string",
+                  "example": "3415f91d-a54c-455b-8ee3-51227dbe4f40"
+                },
+                "instructions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "source_identity": {
+                        "type": "string",
+                        "example": "3415f91d-a54c-455b-8ee3-51227dbe4f40"
+                      },
+                      "identifier": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "artifact_name": {
+                  "type": "string"
+                },
+                "container_name": {
+                  "type": "string"
+                },
+                "field_references": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "field_identifier_reference": {
+                  "type": "string"
+                },
+                "launched_task_instances": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "container_instance_id": {
+                        "type": "string",
+                        "example": "3415f91d-a54c-455b-8ee3-51227dbe4f40"
+                      },
+                      "process_instance_id": {
+                        "type": "string",
+                        "example": "3415f91d-a54c-455b-8ee3-51227dbe4f40"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "related_launch_instructions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "task_reference": {
+                  "type": "string"
+                },
+                "instructions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "source_identity": {
+                        "type": "string"
+                      },
+                      "identifier": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "artifact_name": {
+                  "type": "string"
+                },
+                "container_name": {
+                  "type": "string"
+                },
+                "field_references": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "field_identifier_reference": {
+                  "type": "string"
+                },
+                "processed": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "email": {
+                        "type": "string"
+                      },
+                      "flow_instance_id": {
+                        "type": "string"
+                      },
+                      "container_instance_id": {
+                        "type": "string"
+                      },
+                      "process_instance_id": {
+                        "type": "string"
+                      },
+                      "task_instance_id": {
+                        "type": "string"
+                      },
+                      "identifier": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.Properties.Button": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The text that will be shown on the task instance button. As example: the \"Submit\" text on the button that submit task instance",
+            "example": "Submit"
+          }
+        }
+      },
+      "TaskInstance.Artifact": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TaskInstance.Artifact.FillForm"
+          },
+          {
+            "$ref": "#/components/schemas/TaskInstance.Artifact.FormApprove"
+          },
+          {
+            "$ref": "#/components/schemas/TaskInstance.Artifact.SmartContract"
+          }
+        ]
+      },
+      "TaskInstance.Artifact.FillForm": {
+        "type": "object",
+        "description": "The artifact is what the task executes, for different types of tasks, artifact structures different",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "For the Fill Form task instance this is a id of the Form template, for the Form Approve task instance - id of the Fill Form task instance that will be approved",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "type": {
+            "type": "string",
+            "description": "For a Fill Form type of the artifact is a form",
+            "example": "form"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "version_id": {
+                "type": "string",
+                "description": "The id of the Form version",
+                "example": "aa18a31a-0bcf-48d1-9350-a6ae49900111"
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.Artifact.FormApprove": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The id of the Fill Form task",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "type": {
+            "type": "string",
+            "description": "For a Form Approve type of the artifact is a task_approve",
+            "example": "task_approve"
+          }
+        }
+      },
+      "TaskInstance.Artifact.SmartContract": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The id of the Smart Contract that saved in our system",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the artifact",
+            "example": "smart_contract"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "method": {
+                "type": "string",
+                "description": "The method of the Smart Contract that was selected on task creation step",
+                "example": "doSomething"
+              },
+              "inputs": {
+                "type": "array",
+                "description": "Inputs of the selected method",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "input": {
+                      "type": "string",
+                      "description": "Name of the input",
+                      "example": "argumentA"
+                    },
+                    "target_id": {
+                      "type": "string",
+                      "description": "The id of the selected target type",
+                      "example": "methodOfAnotherSC"
+                    },
+                    "target_type": {
+                      "type": "string",
+                      "description": "The Smart Contract supported Fill Form, Data Dictionary, and other Smart contract as target type",
+                      "example": "smart_contract",
+                      "enum": [
+                        "form",
+                        "data_dictionary",
+                        "smart_contract"
+                      ]
+                    },
+                    "input_argument": {
+                      "type": "string",
+                      "description": "If the selected Smart Contract as a target type, in the input_argument should be selected Parameter Argument from the selected Smart Contract",
+                      "example": "argumentB"
+                    },
+                    "task_reference": {
+                      "type": "string",
+                      "description": "The reference of the task instance",
+                      "example": "f4a3becb-ca02-421f-9dd9-af2f3bbb3930"
+                    }
+                  }
+                }
+              },
+              "outputs": {
+                "type": "array",
+                "description": "Outputs of the Smart Contract",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "output": {
+                      "type": "string",
+                      "description": "The method of the Smart Contract",
+                      "example": "someMethod"
+                    },
+                    "target_id": {
+                      "type": "string",
+                      "description": "The id of the selected target type",
+                      "example": "4275d6a1-623b-4c55-81b4-db7a99ae012e"
+                    },
+                    "target_type": {
+                      "type": "string",
+                      "description": "The Smart Contract supported Fill Form, Data Dictionary, and other Smart contract as target type",
+                      "example": "form",
+                      "enum": [
+                        "form",
+                        "data_dictionary",
+                        "smart_contract"
+                      ]
+                    },
+                    "output_argument": {
+                      "type": "string",
+                      "description": "If the selected Smart Contract as a target type, in the output_argument should be selected Parameter Argument from the selected Smart Contract",
+                      "example": "argumentA"
+                    },
+                    "task_reference": {
+                      "type": "string",
+                      "description": "The reference of the task instance",
+                      "example": "71dd17d5-0a52-4562-9aac-a277c0689d2a"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.ArtifactRelation": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance"
+          },
+          {
+            "$ref": "#/components/schemas/Blockchain.SmartContractInstance"
+          }
+        ]
+      },
+      "TaskInstance.ArtifactRelation.Full": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.Full"
+          },
+          {
+            "$ref": "#/components/schemas/Blockchain.SmartContractInstance"
+          }
+        ]
+      },
+      "TaskInstance.ProcessInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "process_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the process instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string",
+                "description": "The reference of the process instance",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "name": {
+                "type": "string",
+                "description": "The name of the process",
+                "example": "Simple process instance"
+              },
+              "description": {
+                "type": "string",
+                "description": "The description of the process",
+                "example": "Simple process instance description"
+              },
+              "properties": {
+                "type": "object",
+                "properties": {
+                  "capabilities": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "conditional_run": {
+                          "type": "object",
+                          "description": "Its essence is that by filling in specific fields, the system launches separate, previously created, forms.",
+                          "properties": {
+                            "seeds": {
+                              "type": "object",
+                              "properties": {
+                                "artifact": {
+                                  "$ref": "#/components/schemas/TaskInstance.Artifact.FillForm"
+                                }
+                              }
+                            },
+                            "source": {
+                              "type": "object",
+                              "properties": {
+                                "node": {
+                                  "type": "string",
+                                  "example": "containerInstanceService"
+                                },
+                                "nested": {
+                                  "type": "object",
+                                  "properties": {
+                                    "node": {
+                                      "type": "string",
+                                      "example": "processInstanceService"
+                                    },
+                                    "nested": {
+                                      "type": "object",
+                                      "properties": {
+                                        "node": {
+                                          "type": "string",
+                                          "example": "taskInstanceService"
+                                        },
+                                        "nested": {
+                                          "type": "object",
+                                          "properties": {
+                                            "node": {
+                                              "type": "string",
+                                              "example": "artifactService"
+                                            },
+                                            "nested": {
+                                              "type": "object",
+                                              "properties": {
+                                                "node": {
+                                                  "type": "string",
+                                                  "example": "formulaInstanceService"
+                                                },
+                                                "reference": {
+                                                  "type": "string",
+                                                  "example": "55a894bd-ac4a-4f26-bbd2-b7a549d921c"
+                                                }
+                                              }
+                                            },
+                                            "reference": {
+                                              "type": "string",
+                                              "example": "55a894bd-ac4a-4f26-bbd2-b7a549d921c"
+                                            }
+                                          }
+                                        },
+                                        "reference": {
+                                          "type": "string",
+                                          "example": "55a894bd-ac4a-4f26-bbd2-b7a549d921c"
+                                        }
+                                      }
+                                    },
+                                    "reference": {
+                                      "type": "string",
+                                      "example": "55a894bd-ac4a-4f26-bbd2-b7a549d921c"
+                                    }
+                                  }
+                                },
+                                "reference": {
+                                  "type": "string",
+                                  "example": "55a894bd-ac4a-4f26-bbd2-b7a549d921c"
+                                }
+                              }
+                            },
+                            "target": {
+                              "type": "object",
+                              "properties": {
+                                "task_reference": {
+                                  "type": "string",
+                                  "example": "edf2456e-e3db-449f-9613-a6938adb3417"
+                                }
+                              }
+                            },
+                            "weight": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "source_id": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "target": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string"
+                            },
+                            "flow_id": {
+                              "type": "string"
+                            },
+                            "version_id": {
+                              "type": "string"
+                            },
+                            "container_reference": {
+                              "type": "string"
+                            },
+                            "definition_reference": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "started": {
+                "type": "boolean",
+                "description": "The flag that show that the process instance was started"
+              },
+              "completed": {
+                "type": "boolean",
+                "description": "The flag that show that the process instance was completed"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the process instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the process instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "container_instances": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/TaskInstance.ProcessInstance.ContainerInstance"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.ProcessInstance.ContainerInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "container_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the container instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string",
+                "description": "The reference of the container instance",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "name": {
+                "type": "string",
+                "description": "The name of the container instance",
+                "example": "Simple container instance"
+              },
+              "type": {
+                "type": "string",
+                "description": "The container instance has a two types, default and todo. The todo type used only for ToDo task instance type ",
+                "example": "default",
+                "enum": [
+                  "default",
+                  "todo"
+                ]
+              },
+              "started": {
+                "type": "boolean",
+                "description": "The flag that show that the container instance was started"
+              },
+              "completed": {
+                "type": "boolean",
+                "description": "The flag that show that the container instance was completed"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the container instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the container instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              },
+              "completed_at": {
+                "type": "string",
+                "description": "The date and time when the container instance was completed",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "flow_instances": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/TaskInstance.ProcessInstance.ContainerInstance.FlowInstance"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TaskInstance.ProcessInstance.ContainerInstance.FlowInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "flow_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the workflow instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the workflow instance",
+                "example": "Simple flow instance"
+              },
+              "identifier": {
+                "type": "string",
+                "description": "The identifier is a simple string that helps to clarify what the workflow instance do",
+                "example": "flow-instance-identifier"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "This is an aggregated name with workflow name and identifier",
+                "example": "Simple flow instance"
+              },
+              "status": {
+                "type": "integer",
+                "description": "The workflow instance has following statuses: 0 - th workflow instance is not started; 10 - the workflow was started and in the active status; 20 - the workflow instance was completed; 30 - the workflow instance was canceled; 40 - the workflow instance was terminated",
+                "example": 10,
+                "enum": [
+                  0,
+                  10,
+                  20,
+                  30,
+                  40
+                ]
+              },
+              "started": {
+                "type": "boolean",
+                "description": "The flag that show that the workflow instance was started"
+              },
+              "completed": {
+                "type": "boolean",
+                "description": "The flag that show that the workflow instance was completed"
+              },
+              "terminated": {
+                "type": "boolean",
+                "description": "The flag that show that the workflow instance was terminated"
+              },
+              "reference": {
+                "type": "string",
+                "description": "The id of the workflow template",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "version_reference": {
+                "type": "string",
+                "description": "The id of the workflow template version",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "version_index": {
+                "type": "integer",
+                "description": "The workflow version index",
+                "example": "1"
+              },
+              "group": {
+                "type": "string",
+                "description": "The workflow instance has three groups: default - the regular workflow instance that is launched by a tenant user; system - the workflow instance that the system launched when the client user tries to launch workflow to the tenant users; tutorial - the workflow that is created by a Trisk for launch a tutorial for a user",
+                "example": "default",
+                "enum": [
+                  "default",
+                  "system",
+                  "tutorial"
+                ]
+              },
+              "owner_type": {
+                "type": "string",
+                "description": "The workflow instance always has an owner, for default and system group it is a client, for tutorial - tenant",
+                "example": "clients",
+                "enum": [
+                  "clients",
+                  "tenants"
+                ]
+              },
+              "owner_id": {
+                "type": "string",
+                "description": "If the owner of the workflow instance is a client - client id, if the tenant - tenant id",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the workflow instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the workflow instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              },
+              "completed_at": {
+                "type": "string",
+                "description": "The date and time when the workflow instance was completed",
+                "example": "2016-01-01 12:00:00"
+              },
+              "concluded_at": {
+                "type": "string",
+                "description": "The date and time when the workflow instance was terminated",
+                "example": "2016-01-01 12:00:00"
+              },
+              "due_date": {
+                "type": "string",
+                "description": "The date and time of the workflow instance due date",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "owner": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/Client"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "FormInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The instance of the form template",
+            "example": "form_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the form instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The form instance name",
+                "example": "Simple Form Name"
+              },
+              "owner_type": {
+                "type": "string",
+                "description": "The type of the owner for a form instance. Only task instance can be an owner",
+                "example": "task_instance",
+                "enum": [
+                  "task_instance"
+                ]
+              },
+              "owner_id": {
+                "type": "string",
+                "description": "The id of the task instance",
+                "example": "7318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the form instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the form instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.Full": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "section_instances": {
+                    "type": "object",
+                    "description": "The instance of the section",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/FormInstance.SectionInstance.Full"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "section_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the section instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the section instance",
+                "example": "Simple Grouper Name"
+              },
+              "after": {
+                "type": "string",
+                "description": "The id of the section instance after which the current section instance is placed in the form. If the section instance is first in the form instance, the value will be null",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "printable": {
+                "type": "boolean",
+                "description": "The flag that indicate that the section instance will not or will be shown in the print "
+              },
+              "reference": {
+                "type": "string",
+                "description": "The reference of the section",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the form instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the form instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.WithData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "field_instances": {
+                    "type": "object",
+                    "description": "The instance of the field",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.WithData"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance.WithDiscussion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "field_instances": {
+                    "type": "object",
+                    "description": "The instance of the field",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.WithDiscussion"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance.Full": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "field_instances": {
+                    "type": "object",
+                    "description": "The instance of the field",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.Full"
+                        }
+                      }
+                    }
+                  },
+                  "grouper_instances": {
+                    "type": "object",
+                    "description": "The instance of the table and active table",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/FormInstance.SectionInstance.GrouperInstance"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance.FieldInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "field_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the field instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "The title of the field instance",
+                "example": "Simple Field Name"
+              },
+              "type": {
+                "type": "string",
+                "description": "The system supported a few types of the fields",
+                "example": "text",
+                "enum": [
+                  "checkbox",
+                  "date",
+                  "file",
+                  "html",
+                  "label",
+                  "radio",
+                  "select",
+                  "service_file",
+                  "slider",
+                  "text",
+                  "textarea"
+                ]
+              },
+              "reference": {
+                "type": "string",
+                "description": "The reference of the field",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "after": {
+                "type": "string",
+                "description": "The id of the field instance after which the current filed instance is placed in the section instance. If the field instance is first in the section instance, the value will be null",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "printable": {
+                "type": "boolean",
+                "description": "The flag that indicate that the field instance will not or will be shown in the print "
+              },
+              "invisible": {
+                "type": "boolean",
+                "description": "The flag that indicates that the filed instance will not or will be shown in the Fill Form"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the field instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the field instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.WithData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "data_instances": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.DataInstance"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance.FieldInstance.WithDiscussion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "discussion_instances": {
+                    "type": "object",
+                    "description": "The instance of the discussions that was left to the field instance",
+                    "properties": {
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.DiscussionInstance"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance.FieldInstance.Full": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "field_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the field instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "The title of the field instance",
+                "example": "Simple Field Name"
+              },
+              "type": {
+                "type": "string",
+                "description": "The system supported a few types of the fields",
+                "example": "text",
+                "enum": [
+                  "checkbox",
+                  "date",
+                  "file",
+                  "html",
+                  "label",
+                  "radio",
+                  "select",
+                  "service_file",
+                  "slider",
+                  "text",
+                  "textarea"
+                ]
+              },
+              "reference": {
+                "type": "string",
+                "description": "The reference of the field",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "after": {
+                "type": "string",
+                "description": "The id of the field instance after which the current filed instance is placed in the section instance. If the field instance is first in the section instance, the value will be null",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "printable": {
+                "type": "boolean",
+                "description": "The flag that indicate that the field instance will not or will be shown in the print "
+              },
+              "invisible": {
+                "type": "boolean",
+                "description": "The flag that indicates that the filed instance will not or will be shown in the Fill Form"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the field instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the field instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "parameter_instances": {
+                "type": "object",
+                "description": "The parameter instance of the field instance, like description",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.ParameterInstance"
+                    }
+                  }
+                }
+              },
+              "option_instances": {
+                "type": "object",
+                "description": "The option instance of the field instance, like answers to the radio field",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.OptionInstance"
+                    }
+                  }
+                }
+              },
+              "data_instances": {
+                "type": "object",
+                "description": "The data that was filled to the field instance",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.DataInstance"
+                    }
+                  }
+                }
+              },
+              "attachment_instances": {
+                "type": "object",
+                "description": "The instance of the attached files to the field instance type file",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.AttachmentInstance"
+                    }
+                  }
+                }
+              },
+              "service_file_instances": {
+                "type": "object",
+                "description": "The instance of the files attached to the field instance type service_file",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.ServiceFileInstance"
+                    }
+                  }
+                }
+              },
+              "discussion_instances": {
+                "type": "object",
+                "description": "The instance of the discussions that was left to the field instance",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.DiscussionInstance"
+                    }
+                  }
+                }
+              },
+              "comment_instances": {
+                "type": "object",
+                "description": "The instance of the comments that was left to the field instance",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.CommentInstance"
+                    }
+                  }
+                }
+              },
+              "representation_instance": {
+                "type": "object",
+                "description": "The description of the how the field will be represented in the Form Approval task instance",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.RepresentationInstance"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.ParameterInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_field_instances_parameter_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the filed instance parameter instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "attribute": {
+                "type": "string",
+                "description": "The supported attributes of the parameters for filed instance relate to the field instance type. Can be: description, help_message, required, etc",
+                "example": "class"
+              },
+              "value": {
+                "type": "string",
+                "description": "The value related to the selected attribute",
+                "example": "red"
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.OptionInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_field_instances_option_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the filed instance option instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string",
+                "description": "The reference of the filed attribute property ",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "label": {
+                "type": "string",
+                "description": "The label of the filed instance option",
+                "example": "Simple Label"
+              },
+              "weight": {
+                "type": "integer",
+                "description": "The weight used to sort the properties in the option instance",
+                "example": 0
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.DataInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_field_instances_data_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "Tbe if of the grouper instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "The value of the data instance",
+                "example": "Simple Value"
+              },
+              "value_reference": {
+                "type": "string",
+                "description": "The value reference of the data instance",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "weight": {
+                "type": "integer",
+                "description": "The weight used to sort the properties in the data instance",
+                "example": 1
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.AttachmentInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_field_instances_attachment_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the data instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the attached instance",
+                "example": "Simple attachment"
+              },
+              "url": {
+                "type": "string",
+                "description": "The URL where placed the attached instance"
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.ServiceFileInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_field_instances_service_file_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the attachment instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the service instance file",
+                "example": "Simple service file"
+              },
+              "url": {
+                "type": "string",
+                "description": "The URL where placed the service file instance"
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.DiscussionInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_field_instances_discussion_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the service instance file",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "author_id": {
+                "type": "string",
+                "description": "The id of the author of the discussion instance",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "author_type": {
+                "type": "string",
+                "description": "The type of the author of the discussion instance",
+                "example": "users"
+              },
+              "text": {
+                "type": "string",
+                "description": "The text of the discussion instance",
+                "example": "Discussion text"
+              },
+              "resolvable": {
+                "type": "boolean",
+                "description": "The flag that show that discussion can be resolved or not"
+              },
+              "resolved": {
+                "type": "boolean",
+                "description": "The flag that show that discussion resolved or not"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the discussion instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the discussion instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "object",
+                "description": "The user who leaves the discussion",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/Author"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.CommentInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_field_instances_comment_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the discussion instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "The text of the comment instance",
+                "example": "Comment text"
+              },
+              "public": {
+                "type": "boolean",
+                "description": "The flag that indicate that the comment is private or public"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "object",
+                "description": "The user who leaves the comment",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/Author"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.FieldInstance.RepresentationInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_field_instances_representation_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the comment instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "The title representation for a field instance in the From Approve task instance",
+                "example": "Simple title"
+              },
+              "description": {
+                "type": "string",
+                "description": "The description representation for a field instance in the From Approve task instance",
+                "example": "Simple description"
+              },
+              "help_message": {
+                "type": "string",
+                "description": "The help message representation for a field instance in the From Approve task instance",
+                "example": "Simple help message"
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.GrouperInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_grouper_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the grouper instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the grouper instance",
+                "example": "Simple Grouper Name"
+              },
+              "type": {
+                "type": "string",
+                "description": "The type of the grouper instance: table or active_table",
+                "example": "table"
+              },
+              "reference": {
+                "type": "string",
+                "description": "The reference of the grouper",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "after": {
+                "type": "string",
+                "description": "The id of the field instance after which the current grouper instance is placed in the form. If the grouper instance is first in the section instance, the value will be null",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "printable": {
+                "type": "boolean",
+                "description": "The flag that indicate that the grouper instance will not or will be shown in the print "
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the form instance was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the form instance was last time updated",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "type_parameter_instances": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.GrouperInstance.TypeParameterInstance"
+                    }
+                  }
+                }
+              },
+              "parameter_instances": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.GrouperInstance.ParameterInstance"
+                    }
+                  }
+                }
+              },
+              "field_instances": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance"
+                    }
+                  }
+                }
+              },
+              "discussion_instances": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.GrouperInstance.DiscussionInstance"
+                    }
+                  }
+                }
+              },
+              "comment_instances": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.GrouperInstance.CommentInstance"
+                    }
+                  }
+                }
+              },
+              "representation_instance": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FormInstance.SectionInstance.GrouperInstance.RepresentationInstance"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.GrouperInstance.TypeParameterInstance": {
+        "type": "object",
+        "description": "Described the rows and columns in the grouper",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "form_instances_section_instances_grouper_instances_type_parameter_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the type parameter instance",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "attribute": {
+                "type": "string",
+                "description": "Described which attribute is describes: row or column"
+              },
+              "column": {
+                "type": "string",
+                "example": "Simple Grouper Name"
+              },
+              "size": {
+                "type": "string",
+                "description": "The size of the row or column",
+                "example": "1"
+              },
+              "weight": {
+                "type": "integer",
+                "description": "The index number of the column or row",
+                "example": 0
+              },
+              "value": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The reference of the field instance that is represented in the table",
+                  "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FormInstance.SectionInstance.GrouperInstance.ParameterInstance": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.ParameterInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "form_instances_section_instances_grouper_instances_parameter_instances"
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance.GrouperInstance.DiscussionInstance": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.DiscussionInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "form_instances_section_instances_grouper_instances_discussion_instances"
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance.GrouperInstance.CommentInstance": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.CommentInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "form_instances_section_instances_grouper_instances_comment_instances"
+              }
+            }
+          }
+        ]
+      },
+      "FormInstance.SectionInstance.GrouperInstance.RepresentationInstance": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FormInstance.SectionInstance.FieldInstance.RepresentationInstance"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "form_instances_section_instances_grouper_instances_representation_instances"
+              }
+            }
+          }
+        ]
+      },
+      "Blockchain.SmartContractInstance": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "blockchain_smart_contracts_instances"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the smart contract in the Trisk",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "description": "The smart contract instance has a following statuses: pending - when the smart contract task instance was created; in_progress - when the smart contract task instance executing on the blockchain; failed - if the smart contract task instance failed in the blockchain execution; resolved - when the smart contract task instance successfully executed on the blockchain",
+                "example": "pending",
+                "enum": [
+                  "pending",
+                  "in_progress",
+                  "failed",
+                  "resolved"
+                ]
+              },
+              "owner_id": {
+                "type": "string",
+                "description": "The task instance id who launch the smart contract",
+                "example": "7318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "owner_type": {
+                "type": "string",
+                "description": "The type of the owner",
+                "example": "task",
+                "enum": [
+                  "task"
+                ]
+              },
+              "input": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "example": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "output": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "description": "Pending transaction output",
+                    "properties": {
+                      "abi": {
+                        "type": "string"
+                      },
+                      "hash": {
+                        "type": "string",
+                        "description": "Transaction hash",
+                        "example": "0x4ba020916992ac316184a24c74c3c53fc96ac4a695cfae05fad868ac8e84091e"
+                      },
+                      "networkId": {
+                        "type": "string",
+                        "example": "44787"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "description": "Resolved transaction output",
+                    "properties": {
+                      "to": {
+                        "type": "string",
+                        "description": "Smart contract address",
+                        "example": "0x5a8bd2fae5d5a652cef4a36438dd7231326868e0"
+                      },
+                      "from": {
+                        "type": "string",
+                        "description": "Wallet address"
+                      },
+                      "hash": {
+                        "type": "string",
+                        "description": "Transaction hash",
+                        "example": "0x4ba020916992ac316184a24c74c3c53fc96ac4a695cfae05fad868ac8e84091e"
+                      },
+                      "events": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "args": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "example": "time"
+                                  },
+                                  "type": {
+                                    "type": "string",
+                                    "example": "uint256"
+                                  },
+                                  "value": {
+                                    "type": "string",
+                                    "example": "1656680335"
+                                  },
+                                  "indexed": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "Event name",
+                              "example": "SetValue"
+                            }
+                          }
+                        }
+                      },
+                      "gasUsed": {
+                        "type": "integer"
+                      },
+                      "networkId": {
+                        "type": "integer"
+                      },
+                      "blockNumber": {
+                        "type": "integer"
+                      },
+                      "effectiveGasPrice": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Blockchain.SmartContractInstance.Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Blockchain.SmartContractInstance.Error": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "blockchain_smart_contracts_instances_errors"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the blockchain smart contract instance error",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string",
+                "description": "The message of the blockchain smart contract instance error"
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "The data of the blockchain smart contract instance error"
+                }
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the blockchain smart contract instance error was created",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          }
+        }
+      },
+      "Blockchain.Session": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "blockchain_wallets_sessions"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the blockchain session",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "The identifier should be uniq for each user",
+                "example": "WALLET_062fd0cb-f3e2-4ad6-856b-4c3fb3c23c3d_78f01a86-84f1-4bda-8303-5fc575ae221c"
+              },
+              "status": {
+                "type": "string",
+                "description": "The blockchain session has the following statuses: pending - when the wallet is not connected yet to the smart contract; active - when the wallet was connected to the smart contract; removed - when the was wallet disconnected",
+                "example": "pending",
+                "enum": [
+                  "pending",
+                  "active",
+                  "removed"
+                ]
+              },
+              "uri": {
+                "type": "string",
+                "description": "The uniq uri to connect wallet",
+                "example": "wc:e479cf5d-ba50-48ff-8c0f-bf5bead625ee@1?bridge=https%3A%2F%2Ff.bridge.walletconnect.org&key="
+              },
+              "data": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "DataDictionary.Variable": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "data_dictionary_variables"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the data dictionary variable",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "author_id": {
+                "type": "string",
+                "description": "The id of the user who create dictionary variable",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "author_type": {
+                "type": "string",
+                "description": "The type of the user who create dictionary variable",
+                "example": "users"
+              },
+              "name": {
+                "type": "string",
+                "description": "The name of the data dictionary variable",
+                "example": "Simple variable"
+              },
+              "type": {
+                "$ref": "#/components/schemas/DataDictionary.Variable.Type"
+              },
+              "category": {
+                "$ref": "#/components/schemas/DataDictionary.Variable.Category"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "The date and time when the data dictionary variable was created",
+                "example": "2016-01-01 12:00:00"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "The date and time when the data dictionary variable was last time updated",
+                "example": "2016-01-01 12:00:00"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/Author"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DataDictionary.Variable.Category": {
+        "type": "string",
+        "description": "The categories of the data dictionary variables, a separate category for a separate type of the content",
+        "example": "text",
+        "enum": [
+          "text",
+          "date",
+          "file"
+        ]
+      },
+      "DataDictionary.Variable.Type": {
+        "type": "string",
+        "description": "The type of the data dictionary variable: system - created of the system and can't be changed; custom - can be created by a user",
+        "example": "system",
+        "enum": [
+          "system",
+          "custom"
+        ]
+      },
+      "DataDictionary.Variable.Cage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "data_dictionary_variables_cages"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the data dictionary variable cage",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the data dictionary variable cage",
+                "example": "Simple variable"
+              },
+              "type": {
+                "$ref": "#/components/schemas/DataDictionary.Variable.Type"
+              },
+              "category": {
+                "$ref": "#/components/schemas/DataDictionary.Variable.Category"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "values": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DataDictionary.Variable.Cage.Value"
+                    }
+                  }
+                }
+              },
+              "client": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/Client"
+                  }
+                }
+              },
+              "author": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/Author"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DataDictionary.Variable.Cage.Value": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "data_dictionary_variables_cages_values"
+          },
+          "id": {
+            "type": "string",
+            "description": "The id of the value for a data dictionary variable cage",
+            "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The id of the value for a data dictionary variable cage",
+                "example": "t318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "name": {
+                "type": "string",
+                "description": "The name of the variable",
+                "example": "Simple variable"
+              },
+              "value": {
+                "type": "string",
+                "description": "The value of the variable can be as a string or as a link to the file",
+                "example": "Simple variable value"
+              },
+              "value_reference": {
+                "type": "string",
+                "description": "The reference of the value",
+                "example": "7318a31a-0bcf-48d1-9350-a6ae499007c0"
+              },
+              "weight": {
+                "type": "integer",
+                "description": "The weight used to sort the values in the cage",
+                "example": 0
+              }
+            }
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "The page that the user wants to request",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "description": "The limit of how many items will be returned for a page",
+            "example": 15
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Authentication",
+      "externalDocs": {
+        "description": "",
+        "url": ""
+      }
+    },
+    {
+      "name": "JWT",
+      "description": "JWT",
+      "externalDocs": {
+        "description": "",
+        "url": ""
+      }
+    },
+    {
+      "name": "User",
+      "description": "User",
+      "externalDocs": {
+        "description": "",
+        "url": ""
+      }
+    },
+    {
+      "name": "Task instances",
+      "description": "Task instances",
+      "externalDocs": {
+        "description": "",
+        "url": ""
+      }
+    },
+    {
+      "name": "Task instances discussions",
+      "description": "Task instances discussions",
+      "externalDocs": {
+        "description": "",
+        "url": ""
+      }
+    },
+    {
+      "name": "Blockchain",
+      "description": "Blockchain",
+      "externalDocs": {
+        "description": "",
+        "url": ""
+      }
+    },
+    {
+      "name": "Data dictionary",
+      "description": "Data dictionary",
+      "externalDocs": {
+        "description": "",
+        "url": ""
+      }
+    }
+  ]
+}
